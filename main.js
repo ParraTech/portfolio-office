@@ -1,33 +1,38 @@
-// --- Bio: track to white panel in illustration ---
-const LANDSCAPE = { w: 5504, h: 3072 };
-const PANEL = { left: 0.04, top: 0.57, width: 0.18, height: 0.240 };
+// --- Bio: track to the cabinet doors in the video, regardless of viewport size ---
+// The video is covered (object-fit: cover), so the visible crop of its 1920x1080
+// frame shifts with the viewport's aspect ratio. PANEL is the cabinet-door
+// region as fractions of that native frame; recompute on resize so the text
+// always lands on the cabinet instead of drifting onto the bookshelf/floor.
+const VIDEO_FRAME = { w: 1920, h: 1080 };
+const PANEL = { left: 0.010, top: 0.489, width: 0.260, height: 0.391 };
+const MOBILE_BREAKPOINT = 600;
 
 function positionBio() {
   const bio = document.querySelector('.bio');
-  if (window.innerWidth <= 600) {
+  if (window.innerWidth <= MOBILE_BREAKPOINT) {
     ['left', 'top', 'width', 'transform'].forEach(p => bio.style.removeProperty(p));
     return;
   }
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const imgAspect = LANDSCAPE.w / LANDSCAPE.h;
-  const vpAspect  = vw / vh;
-  let imgW, imgH, offX, offY;
-  if (vpAspect >= imgAspect) {
-    imgW = vw; imgH = vw / imgAspect; offX = 0; offY = (vh - imgH) / 2;
+  const videoAspect = VIDEO_FRAME.w / VIDEO_FRAME.h;
+  const vpAspect = vw / vh;
+  let renderedW, renderedH, offX, offY;
+  if (vpAspect >= videoAspect) {
+    renderedW = vw; renderedH = vw / videoAspect; offX = 0; offY = (vh - renderedH) / 2;
   } else {
-    imgH = vh; imgW = vh * imgAspect; offX = (vw - imgW) / 2; offY = 0;
+    // matches the video's object-position: left center — crop from the right only
+    renderedH = vh; renderedW = vh * videoAspect; offX = 0; offY = 0;
   }
-  const panelLeft  = offX + PANEL.left * imgW;
-  const panelRight = offX + (PANEL.left + PANEL.width) * imgW;
-  const visLeft    = Math.max(0, panelLeft);
-  const visRight   = Math.min(vw, panelRight);
-  // shift right by 10% of the visible panel width to match illustration panel
-  const visCenterX = (visLeft + visRight) / 2 + (visRight - visLeft) * 0.10;
-  const visCenterY = offY + (PANEL.top + PANEL.height / 2) * imgH;
+  const panelLeft   = offX + PANEL.left * renderedW;
+  const panelRight  = offX + (PANEL.left + PANEL.width) * renderedW;
+  const panelTop    = offY + PANEL.top * renderedH;
+  const panelBottom = offY + (PANEL.top + PANEL.height) * renderedH;
+  const visLeft  = Math.max(0, panelLeft);
+  const visRight = Math.min(vw, panelRight);
 
-  bio.style.left      = visCenterX + 'px';
-  bio.style.top       = visCenterY + 'px';
+  bio.style.left      = (visLeft + visRight) / 2 + 'px';
+  bio.style.top       = (panelTop + panelBottom) / 2 + 'px';
   bio.style.width     = Math.max(40, visRight - visLeft) + 'px';
   bio.style.transform = 'translate(-50%, -50%)';
 }
@@ -43,46 +48,14 @@ gsap.from('.bio', {
   ease: 'power2.out',
 });
 
-// --- Day/night scene by visitor's local time ---
-const NIGHT_START = 19, NIGHT_END = 7; // night = 7pm–7am
-const SCENES = {
-  day:   { el: document.getElementById('bg-day'),   src: 'media/light-mode-office-og.png' },
-  night: { el: document.getElementById('bg-night'), src: 'media/dark-mode-office.png' },
-};
-
-let manualNight = null; // set by the ?debug toggle; wins over URL param and clock
-
-function isNight() {
-  if (manualNight !== null) return manualNight;
-  const override = new URLSearchParams(location.search).get('scene');
-  if (override) return override === 'night';
-  const h = new Date().getHours();
-  return h >= NIGHT_START || h < NIGHT_END;
+// --- Background video: landscape clip loads by default from the <source> in
+// HTML (so it plays even if this script never runs); on mobile-width
+// viewports, swap in the portrait clip instead. Autoplay once, then freeze +
+// slow zoom on last frame. ---
+const video = document.getElementById('bg-video');
+const isMobileViewport = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+if (isMobileViewport) {
+  video.src = 'media/portrait-background.mp4';
 }
-
-function applyScene() {
-  const night = isNight();
-  document.body.classList.toggle('night', night);
-  document.getElementById('scene-toggle').textContent = night ? '☀' : '☾';
-}
-
-applyScene();
-
-if (new URLSearchParams(location.search).has('debug')) {
-  document.body.classList.add('debug');
-  document.getElementById('scene-toggle').addEventListener('click', () => {
-    manualNight = !isNight();
-    applyScene();
-  });
-}
-
-// load the active scene first, then preload the other for the crossfade
-const active = isNight() ? SCENES.night : SCENES.day;
-const inactive = active === SCENES.night ? SCENES.day : SCENES.night;
-active.el.addEventListener('load', () => { inactive.el.src = inactive.src; }, { once: true });
-active.el.src = active.src;
-
-// arm the slow crossfade only after first paint
-requestAnimationFrame(() => document.body.classList.add('scene-ready'));
-
-setInterval(applyScene, 60_000);
+video.play().catch(() => {});
+video.addEventListener('ended', () => video.classList.add('settled'));

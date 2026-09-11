@@ -17,32 +17,34 @@ html, body {
   overflow: hidden;
 }
 
-/* Layer 1 — office illustration */
+/* Layer 1 — background video */
 .bg {
   position: absolute;
   inset: 0;
   z-index: 1;
 }
 
-.bg-layer {
+.bg-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* the cabinet the bio text tracks to sits at the frame's left edge —
+     crop from the right on narrow viewports so it never scrolls out of view */
+  object-position: left center;
+  transform: scale(1) translateZ(0);
+  transform-origin: center;
+  transition: transform 30s ease-out;
+  /* promotes the video to its own GPU layer so the slow zoom below scales one
+     cached texture instead of re-rasterizing the paused frame each tick,
+     which otherwise shows up as a visible shake/shimmer during the zoom */
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
-#bg-night {
-  opacity: 0;
-}
-
-/* armed one frame after load so page load never plays the slow fade */
-.scene-ready .bg-layer {
-  transition: opacity 8s ease;
-}
-
-.night #bg-night {
-  opacity: 1;
+.bg-video.settled {
+  transform: scale(1.1) translate(-1.5%, -1.5%) translateZ(0);
 }
 
 /* Layer 2 — UI overlays */
@@ -53,12 +55,12 @@ html, body {
   pointer-events: none;
 }
 
-/* Bio — centered within the white panel in the illustration */
+/* Bio — pinned to the bottom-left corner */
 .bio {
   position: absolute;
-  left: 10%;
-  top: 70%;
-  width: 20%;
+  left: 14%;
+  top: 65%;
+  width: 19%;
   transform: translate(-50%, -50%);
   pointer-events: auto;
   font-family: Georgia, 'Times New Roman', serif;
@@ -66,16 +68,19 @@ html, body {
   /* single scaling knob: all children use em, so the whole block grows/shrinks together */
   font-size: clamp(8px, 1.8vw, 26px);
   /*text-align: center;*/
+  /* light halo + soft dark shadow keeps text legible over the wood grain
+     regardless of whether it's sitting on a light or dark patch */
+  filter:
+    drop-shadow(0 0 10px rgba(248, 246, 242, 0.85))
+    drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
 
 .bio-greeting {
-  display: block;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.38em;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.5;
-  margin-bottom: 0.25em;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 0.5em;
+  opacity: 0.85;
+  margin-bottom: 1.4em;
 }
 
 .bio-name {
@@ -92,7 +97,7 @@ html, body {
   font-family: Georgia, 'Times New Roman', serif;
   font-style: italic;
   font-size: 0.5em;
-  opacity: 0.75;
+  opacity: 0.85;
   margin-bottom: 1.4em;
 }
 
@@ -135,38 +140,10 @@ html, body {
   opacity: 0.4;
 }
 
-/* Dev-only scene toggle — shown via ?debug */
-#scene-toggle {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 4;
-  display: none;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 18px;
-  background: none;
-  border: 1px solid #1a1a1a;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  color: #1a1a1a;
-}
-
-.debug #scene-toggle {
-  display: block;
-}
-
-.night #scene-toggle {
-  color: #f8f6f2;
-  border-color: #f8f6f2;
-}
-
 /* ── Mobile / portrait ────────────────────────────────────── */
 @media (max-width: 600px) {
   .bio {
     left: 5%;
-    top: auto;
     bottom: 7%;
     width: 88%;
     font-size: clamp(10px, 4.5vw, 22px);
