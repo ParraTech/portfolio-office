@@ -51,7 +51,11 @@ gsap.from('.bio', {
 // --- Background video: landscape clip loads by default from the <source> in
 // HTML (so it plays even if this script never runs); on mobile-width
 // viewports, swap in the portrait clip instead. Autoplay once, then freeze +
-// slow zoom on last frame. ---
+// slow zoom on last frame.
+// Both clips were run through ffmpeg's deshake filter — the raw AI-generated
+// footage has a persistent low-level camera jitter that's most noticeable at
+// the end, once the sketch-to-color animation settles and that jitter becomes
+// the only motion left. Re-run deshake on any replacement clip before using it. ---
 const video = document.getElementById('bg-video');
 const isMobileViewport = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
 if (isMobileViewport) {
