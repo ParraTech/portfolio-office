@@ -63,9 +63,21 @@ const mobileMql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
 // resizing across the breakpoint (e.g. dragging a devtools device toolbar,
 // or rotating without a reload) leaves the wrong-aspect clip loaded, which
 // object-fit: cover then crops down to a sliver of the frame.
+const MOBILE_PLAYBACK_RATE = 1.15;
+
+// Chromium resets playbackRate back to 1 whenever a new resource load kicks
+// off, so setting it right after video.src = ... gets silently clobbered —
+// re-apply it once the new resource is actually ready instead.
+video.addEventListener('loadedmetadata', () => {
+  video.playbackRate = mobileMql.matches ? MOBILE_PLAYBACK_RATE : 1;
+});
+
 function syncVideoSource() {
   const wanted = mobileMql.matches ? 'media/portrait-background.mp4' : 'media/office-dogs.mp4';
-  if (video.currentSrc.endsWith(wanted)) return;
+  if (video.currentSrc.endsWith(wanted)) {
+    video.playbackRate = mobileMql.matches ? MOBILE_PLAYBACK_RATE : 1;
+    return;
+  }
   video.src = wanted;
   video.classList.remove('settled');
   video.play().catch(() => {});

@@ -148,7 +148,7 @@ html, body {
     top: auto;
     transform: none;
     left: 5%;
-    bottom: 7%;
+    bottom: 2%;
     width: 90%;
     font-size: clamp(10px, 4.5vw, 22px);
   }
