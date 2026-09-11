@@ -151,6 +151,14 @@ html, body {
     bottom: 2%;
     width: 90%;
     font-size: clamp(10px, 4.5vw, 22px);
+    /* desktop's subtle halo reads fine over the cabinet, but gets lost in the
+       wood-grain floor texture behind the mobile layout — stack a wider,
+       brighter bloom on top of it so the text pops off the busy background */
+    filter:
+      drop-shadow(0 0 6px rgba(248, 246, 242, 0.95))
+      drop-shadow(0 0 16px rgba(248, 246, 242, 0.85))
+      drop-shadow(0 0 28px rgba(248, 246, 242, 0.6))
+      drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
   }
 
   .bio-social {
