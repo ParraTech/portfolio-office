@@ -57,9 +57,21 @@ gsap.from('.bio', {
 // the end, once the sketch-to-color animation settles and that jitter becomes
 // the only motion left. Re-run deshake on any replacement clip before using it. ---
 const video = document.getElementById('bg-video');
-const isMobileViewport = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
-if (isMobileViewport) {
-  video.src = 'media/portrait-background.mp4';
+const mobileMql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+
+// Re-checked on every breakpoint crossing, not just at load — otherwise
+// resizing across the breakpoint (e.g. dragging a devtools device toolbar,
+// or rotating without a reload) leaves the wrong-aspect clip loaded, which
+// object-fit: cover then crops down to a sliver of the frame.
+function syncVideoSource() {
+  const wanted = mobileMql.matches ? 'media/portrait-background.mp4' : 'media/office-dogs.mp4';
+  if (video.currentSrc.endsWith(wanted)) return;
+  video.src = wanted;
+  video.classList.remove('settled');
+  video.play().catch(() => {});
 }
+
+syncVideoSource();
+mobileMql.addEventListener('change', syncVideoSource);
 video.play().catch(() => {});
 video.addEventListener('ended', () => video.classList.add('settled'));

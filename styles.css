@@ -143,9 +143,13 @@ html, body {
 /* ── Mobile / portrait ────────────────────────────────────── */
 @media (max-width: 600px) {
   .bio {
+    /* override the desktop centering anchor (top + translate(-50%,-50%)) —
+       otherwise it stacks with bottom below and pushes the block off-screen */
+    top: auto;
+    transform: none;
     left: 5%;
     bottom: 7%;
-    width: 88%;
+    width: 90%;
     font-size: clamp(10px, 4.5vw, 22px);
   }
 
